@@ -20,6 +20,12 @@ ui <- fluidPage(
   sidebarLayout(
     # Sidebar panel for inputs ----
     sidebarPanel(
+      radioButtons(inputId = "data_selection",
+                   label = "Restrict analysis to:",
+                   choices = c("Cell classes (n=13)" = "classes",
+                     "All tissue subclusters (n=565)" = "subclusters")
+                   ),
+      
       textAreaInput(inputId = "genelist",
                     label = "Input your gene list:",
                     #value = 'Mag\nMobp\nMog\nMbp\nOmg',
@@ -54,7 +60,12 @@ server <- function(input, output) {
   observeEvent(input$submit, {
     start <- Sys.time()
     # load reference data as "saunders_ranks_matrix"
-    saunders_ranks_matrix <- readRDS(here('data', 'processed', 'saunders_ranks_matrix.RDS'))
+    if (input$data_selection == "classes") {
+      saunders_ranks_matrix <- readRDS(here('data', 'processed', 'saunders_classes_ranks_matrix.RDS'))
+    } else {
+      saunders_ranks_matrix <- readRDS(here('data', 'processed', 'saunders_ranks_matrix.RDS'))
+    }
+    
     unique_genes <- saunders_ranks_matrix$gene_symbol
     cleaned_gene_list <- isolate(process_input_genes(input$genelist))
     if (input$species == 'Human') {
@@ -91,11 +102,13 @@ server <- function(input, output) {
     table %<>% mutate(pValue = signif(pValue, digits = 3), 
                       AUROC = signif(AUROC, digits = 3),
                       adjusted_P = signif(p.adjust(pValue), digits = 3))
-    
-    meta <- readRDS(here('data' , 'raw', 'annotation.BrainCellAtlas_Saunders_version_2018.04.01.RDS'))
-    meta %<>% select(tissue_subcluster, full_name, tissue, class)
-    
-    table <- left_join(table, meta, by="tissue_subcluster")
+    if (input$data_selection == "subclusters") {
+      meta <- readRDS(here('data' , 'processed', 'meta.RDS'))
+      meta %<>% select(tissue_subcluster, full_name, tissue_name, class)
+      table <- left_join(table, meta, by="tissue_subcluster")
+    } else {
+      table %<>% rename(class = tissue_subcluster)
+    }
   
   output$summary <- renderPrint({
     #count of intersection of submitted genes with total gene list
