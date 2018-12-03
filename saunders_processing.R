@@ -4,8 +4,6 @@ library(tidyr)
 library(magrittr)
 library(here)
 
-getwd()
-setwd('~/projects/saunders_single_cell/')
 
 # read in expression data
 expression <- readRDS(here('data', 'raw', 'metacells.BrainCellAtlas_Saunders_version_2018.04.01.RDS'))
@@ -15,6 +13,11 @@ dim(expression)
 
 # read in metadata
 meta <- readRDS(here('data', 'raw', 'annotation.BrainCellAtlas_Saunders_version_2018.04.01.RDS'))
+tissue_levels <- list("CB" = "Cerebellum", "FC" = "Frontal Cortex", "PC" = "Posterior Cortex", 
+                      "ENT" = "Entopeduncular", "GP" = "Globus Pallidus", "HC" = "Hippocampus", 
+                      "STR" = "Striatum", "SN" = "Substantia Nigra", "TH" = "Thalamus")
+meta %<>% mutate(tissue_name = recode(meta$tissue, !!!tissue_levels)) 
+meta %<>% select(-tissue) 
 
 #test <- expression[, names(expression) %in% meta$tissue_subcluster]
 #dim(test)
@@ -32,9 +35,13 @@ print(dim(tidy))
 #tidy %<>% group_by(gene_symbol, tissue_subcluster) %>% summarise(log1ExpZ2 = mean(log1ExpZ))
 #print(dim(tidy))
 
-saunders_ranks_matrix <- tidy %>% group_by(tissue_subcluster) %>% 
-  mutate(log1ExpZRank = rank(log1ExpZ)) %>% select(-expression, -log1Exp, -log1ExpZ) %>% 
+saunders_ranks_matrix <- tidy %>% 
+  group_by(tissue_subcluster) %>% 
+  mutate(log1ExpZRank = rank(log1ExpZ)) %>% 
+  select(-expression, -log1Exp, -log1ExpZ) %>% 
   spread(tissue_subcluster, value = log1ExpZRank)
 
 write_csv(saunders_ranks_matrix, here('data', 'processed', 'processed_saunders_ranks.csv'))
 saveRDS(saunders_ranks_matrix, file = here('data', 'processed', 'saunders_ranks_matrix.RDS'))
+write_csv(meta, here('data', 'processed', 'metadata.csv'))
+saveRDS(meta, file = here('data', 'processed', 'meta.RDS'))
