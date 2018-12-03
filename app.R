@@ -2,11 +2,15 @@ library(shiny)
 library(tibble)
 library(readr)
 library(dplyr)
+library(here)
 library(tidyr)
 library(magrittr)
 library(purrr)
 source("./AUCFunction.R")
 source("./string_processing.R")
+
+saunders_ranks_matrix <- readRDS(here('data', 'processed', 'saunders_ranks_matrix.RDS'))
+unique_genes <- saunders_ranks_matrix$gene_symbol
 
 apply_MWU <- function(column, targetIndices) {
   wilcox.test(column[targetIndices], column[!targetIndices], conf.int = F)$p.value
@@ -54,15 +58,10 @@ server <- function(input, output) {
   observeEvent(input$submit, {
     start <- Sys.time()
     # load reference data as "saunders_ranks_matrix"
-    saunders_ranks_matrix <- readRDS(here('data', 'processed', 'saunders_ranks_matrix.RDS'))
-    unique_genes <- saunders_ranks_matrix$gene_symbol
     cleaned_gene_list <- isolate(process_input_genes(input$genelist))
     if (input$species == 'Human') {
       cleaned_gene_list <- convert_genes(cleaned_gene_list)
     }
-    
-    # print to console
-    print(paste0("Before time taken:", Sys.time() - start))
     
     #for indices - use dplyr for ease
     forIndices <- as_tibble(saunders_ranks_matrix$gene_symbol)

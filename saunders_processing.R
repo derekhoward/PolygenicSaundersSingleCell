@@ -4,9 +4,6 @@ library(tidyr)
 library(magrittr)
 library(here)
 
-getwd()
-setwd('~/projects/saunders_single_cell/')
-
 # read in expression data
 expression <- readRDS(here('data', 'raw', 'metacells.BrainCellAtlas_Saunders_version_2018.04.01.RDS'))
 # convert to tibble while creating column with rownames
@@ -36,5 +33,6 @@ saunders_ranks_matrix <- tidy %>% group_by(tissue_subcluster) %>%
   mutate(log1ExpZRank = rank(log1ExpZ)) %>% select(-expression, -log1Exp, -log1ExpZ) %>% 
   spread(tissue_subcluster, value = log1ExpZRank)
 
+dir.create(here('data', 'processed'))
 write_csv(saunders_ranks_matrix, here('data', 'processed', 'processed_saunders_ranks.csv'))
 saveRDS(saunders_ranks_matrix, file = here('data', 'processed', 'saunders_ranks_matrix.RDS'))
