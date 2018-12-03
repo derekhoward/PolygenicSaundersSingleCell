@@ -70,5 +70,7 @@ class_ranks_matrix <- tidy_by_class %>%
 
 dim(class_ranks_matrix)
 
+colnames(class_ranks_matrix) <- tolower(colnames(class_ranks_matrix))
+
 write_csv(class_ranks_matrix, here('data', 'processed', 'processed_saunders_classes_ranks.csv'))
 saveRDS(class_ranks_matrix, file = here('data', 'processed', 'saunders_classes_ranks_matrix.RDS'))
