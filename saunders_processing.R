@@ -45,6 +45,7 @@ saunders_ranks_matrix <- tidy %>%
 dir.create(here('data', 'processed'))
 write_csv(saunders_ranks_matrix, here('data', 'processed', 'processed_saunders_ranks.csv'))
 saveRDS(saunders_ranks_matrix, file = here('data', 'processed', 'saunders_ranks_matrix.RDS'))
+meta %<>% mutate(class = tolower(class))
 write_csv(meta, here('data', 'processed', 'metadata.csv'))
 saveRDS(meta, file = here('data', 'processed', 'meta.RDS'))
 

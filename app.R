@@ -12,6 +12,8 @@ source("./string_processing.R")
 #load reference data on session start
 saunders_ranks_matrix_types <- readRDS(here('data', 'processed', 'saunders_ranks_matrix.RDS'))
 saunders_ranks_matrix_classes <- readRDS(here('data', 'processed', 'saunders_classes_ranks_matrix.RDS'))
+meta <- readRDS(here('data' , 'processed', 'meta.RDS'))
+
   
 unique_genes <- saunders_ranks_matrix_types$gene_symbol
 
@@ -29,8 +31,8 @@ ui <- fluidPage(
     sidebarPanel(
       radioButtons(inputId = "data_selection",
                    label = "Restrict analysis to:",
-                   choices = c("Cell classes (n=13)" = "classes",
-                     "All tissue subclusters (n=565)" = "subclusters")
+                   choices = c("All regions - cell classes (n=13)" = "classes",
+                     "All regions - tissue subclusters (n=565)" = "subclusters", sort(unique(meta$tissue_name)))
                    ),
       
       textAreaInput(inputId = "genelist",
@@ -69,8 +71,13 @@ server <- function(input, output) {
 
     if (input$data_selection == "classes") {
       saunders_ranks_matrix <- saunders_ranks_matrix_classes
+    } else if (input$data_selection == "subclusters") {
+      saunders_ranks_matrix <- saunders_ranks_matrix_types
     } else {
       saunders_ranks_matrix <- saunders_ranks_matrix_types
+      tissue_subcluster_to_keep <- meta %>% filter(tissue_name == input$data_selection) %>% .$tissue_subcluster
+      #tissue_subcluster_to_keep <- meta %>% filter(tissue_name == "Thalamus") %>% .$tissue_subcluster
+      saunders_ranks_matrix %<>% select_(.dots=c("gene_symbol", quote(tissue_subcluster_to_keep)))
     }
     
     unique_genes <- saunders_ranks_matrix$gene_symbol
@@ -107,10 +114,8 @@ server <- function(input, output) {
     table %<>% mutate(pValue = signif(pValue, digits = 3), 
                       AUROC = signif(AUROC, digits = 3),
                       adjusted_P = signif(p.adjust(pValue), digits = 3))
-    if (input$data_selection == "subclusters") {
-      meta <- readRDS(here('data' , 'processed', 'meta.RDS'))
-      meta %<>% select(tissue_subcluster, full_name, tissue_name, class)
-      table <- left_join(table, meta, by="tissue_subcluster")
+    if (input$data_selection != "classes") {
+      table <- left_join(table, meta %>% select(tissue_subcluster, full_name, tissue_name, class), by="tissue_subcluster")
     } else {
       table %<>% rename(class = tissue_subcluster)
     }
@@ -126,7 +131,11 @@ server <- function(input, output) {
     ))
   })
   
+  
   output$view <- renderDataTable({
+    if (isolate(input$data_selection) != "classes") {
+      table %<>% select(full_name, class, everything())
+    }
     table
   }, escape = FALSE)
   })
