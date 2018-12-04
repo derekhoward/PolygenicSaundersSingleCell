@@ -32,7 +32,7 @@ ui <- fluidPage(
       radioButtons(inputId = "data_selection",
                    label = "Restrict analysis to:",
                    choices = c("All regions - cell classes (n=13)" = "classes",
-                     "All regions - tissue subclusters (n=565)" = "subclusters", sort(unique(meta$tissue_name)))
+                     "All regions - tissue subclusters (n=565 - slow)" = "subclusters", sort(unique(meta$tissue_name)))
                    ),
       
       textAreaInput(inputId = "genelist",
