@@ -1,9 +1,9 @@
 library(shiny)
 library(tibble)
-library(readr)
 library(dplyr)
 library(here)
 library(tidyr)
+library(shinyjs)
 library(magrittr)
 library(purrr)
 source("./AUCFunction.R")
@@ -22,6 +22,8 @@ apply_MWU <- function(column, targetIndices) {
 }
 
 ui <- fluidPage(
+  shinyjs::useShinyjs(),
+  tags$head(includeHTML("google-analytics.html")),
   # App title ----
   titlePanel("Polygenic tester for mouse nervous system (Saunders, et al., dataset)"),
   
@@ -53,12 +55,16 @@ ui <- fluidPage(
     mainPanel(
       div(
         id = "main",
+        
+        p("This tool is made possible by data from:"),
+        tags$p("Saunders A*, Macosko E.Z*, Wysoker A, Goldman M, Krienen, F, de Rivera H, Bien E, Baum M, Wang S, Bortolin L, Goeva A, Nemesh J, Kamitaki N, Brumbaugh S, Kulp D and McCarroll, S.A. 2018. Molecular Diversity and Specializations among the Cells of the Adult Mouse Brain. "),
+        tags$a(href="https://doi.org/10.1016/j.cell.2018.07.028", "2018. Cell. 174(4) P1015-1030.E16"),
+        br(),
+        br()),
+        
         verbatimTextOutput("summary"),
         br(),
         dataTableOutput("view")
-        #plotlyOutput("dotplot"),
-        #verbatimTextOutput("info")
-      )
     )
   )
 )
@@ -68,7 +74,9 @@ ui <- fluidPage(
 server <- function(input, output) {
   observeEvent(input$submit, {
     start <- Sys.time()
-
+    shinyjs::hide("main")
+    shinyjs::disable("submit") 
+    
     if (input$data_selection == "classes") {
       saunders_ranks_matrix <- saunders_ranks_matrix_classes
     } else if (input$data_selection == "subclusters") {
@@ -138,7 +146,10 @@ server <- function(input, output) {
     }
     table
   }, escape = FALSE)
+  shinyjs::enable("submit")
+  
   })
+  
 }
 
 shinyApp(ui, server)
